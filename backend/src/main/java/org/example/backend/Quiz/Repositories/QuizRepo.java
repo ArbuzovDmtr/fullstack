@@ -1,5 +1,6 @@
-package org.example.backend.Quiz;
+package org.example.backend.Quiz.Repositories;
 
+import org.example.backend.Quiz.Quiz;
 import org.springframework.data.mongodb.repository.MongoRepository;
 
 import java.util.List;

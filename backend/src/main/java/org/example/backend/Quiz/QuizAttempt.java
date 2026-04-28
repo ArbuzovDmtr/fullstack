@@ -1,12 +1,15 @@
 package org.example.backend.Quiz;
 
+import lombok.Getter;
+import lombok.Setter;
 import org.example.backend.User.UserAnswer;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.Instant;
 import java.util.List;
-
+@Getter
+@Setter
 @Document(collection = "quizAttempts")
 public class QuizAttempt {
     @Id

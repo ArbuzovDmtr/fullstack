@@ -2,7 +2,7 @@ package org.example.backend.Controllers;
 
 import lombok.RequiredArgsConstructor;
 import org.example.backend.Quiz.Quiz;
-import org.example.backend.Quiz.QuizService;
+import org.example.backend.Quiz.Services.QuizService;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
