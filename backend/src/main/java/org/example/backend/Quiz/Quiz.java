@@ -3,6 +3,8 @@ package org.example.backend.Quiz;
 
 import lombok.*;
 import org.example.backend.Question.Question;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.Instant;
 import java.util.List;
@@ -12,8 +14,9 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@Document(collection = "quizzes")
 public class Quiz {
-
+    @Id
     private String id;
 
     private String title;
