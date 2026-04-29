@@ -10,8 +10,10 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.Instant;
 import java.util.List;
 
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
@@ -54,6 +56,33 @@ class QuizServiceTest {
                         .getFirst()
                         .getId()
         );
+    }
+    @Test
+    void createQuiz_setsCreatedAt() {
+        Quiz quiz = new Quiz();
+
+        AnswerOption option1 = new AnswerOption();
+        option1.setText("Yes");
+        option1.setCorrect(true);
+
+        AnswerOption option2 = new AnswerOption();
+        option2.setText("No");
+        option2.setCorrect(false);
+
+        Question question = new Question();
+        question.setAnswerOptions(List.of(option1, option2));
+
+        quiz.setQuestions(List.of(question));
+
+        when(quizRepo.save(any()))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        Instant before = Instant.now();
+        Quiz savedQuiz = quizService.createQuiz(quiz);
+        Instant after = Instant.now();
+
+        assertThat(savedQuiz.getCreatedAt())
+                .isBetween(before, after);
     }
 
 }
