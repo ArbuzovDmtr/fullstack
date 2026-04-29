@@ -18,18 +18,6 @@ public class QuizService {
 
     private final QuizRepo quizRepo;
 
-    public List<Quiz> getAllPublishedQuizzes() {
-        return quizRepo.findByPublishedTrue();
-    }
-
-    public Quiz getQuizById(String id) {
-        return quizRepo.findById(id)
-                .orElseThrow(() -> new NoSuchElementException("Quiz not found"));
-    }
-
-    public void deleteQuiz(String id) {
-        quizRepo.deleteById(id);
-    }
     public Quiz createQuiz(Quiz quiz) {
         quiz.setCreatedAt(Instant.now());
 
@@ -45,4 +33,18 @@ public class QuizService {
 
         return quizRepo.save(quiz);
     }
+
+    public List<Quiz> getAllPublishedQuizzes() {
+        return quizRepo.findByPublishedTrue();
+    }
+
+    public Quiz getQuizById(String id) {
+        return quizRepo.findById(id)
+                .orElseThrow(() -> new NoSuchElementException("Quiz not found"));
+    }
+
+    public void deleteQuiz(String id) {
+        quizRepo.deleteById(id);
+    }
+
 }
