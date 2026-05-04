@@ -84,5 +84,27 @@ class QuizServiceTest {
         assertThat(savedQuiz.getCreatedAt())
                 .isBetween(before, after);
     }
+    @Test
+    void createQuiz_returnsRepoResult() {
+        Quiz quiz = new Quiz();
 
+        AnswerOption option1 = new AnswerOption();
+        option1.setText("Yes");
+        option1.setCorrect(true);
+
+        AnswerOption option2 = new AnswerOption();
+        option2.setText("No");
+        option2.setCorrect(false);
+
+        Question question = new Question();
+        question.setAnswerOptions(List.of(option1, option2));
+        quiz.setQuestions(List.of(question));
+
+
+        when(quizRepo.save(any())).thenReturn(quiz);
+
+        Quiz savedQuiz = quizService.createQuiz(quiz);
+
+        assertThat(savedQuiz).isSameAs(quiz);
+    }
 }
