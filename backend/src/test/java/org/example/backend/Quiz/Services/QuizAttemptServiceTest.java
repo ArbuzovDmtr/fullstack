@@ -14,6 +14,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -194,5 +195,44 @@ class QuizAttemptServiceTest {
 
         assertThat(result.getScore()).isEqualTo(10);
         assertThat(result.getMaxScore()).isEqualTo(10);
+    }
+    @Test
+    void submitAttempt_shouldSaveAttemptWithScoreAndFinishedAt() {
+
+        Question question = new Question();
+        question.setId("1");
+        question.setType(QuestionType.SINGLE_CHOICE);
+        question.setPoints(10);
+
+        AnswerOption correctOption = new AnswerOption();
+        correctOption.setId("1");
+        correctOption.setCorrect(true);
+        question.setAnswerOptions(List.of(correctOption));
+
+        Quiz quiz = new Quiz();
+        quiz.setId("1");
+        quiz.setQuestions(List.of(question));
+
+        UserAnswer userAnswer = new UserAnswer();
+        userAnswer.setQuestionId("1");
+        userAnswer.setSelectedOptionIds(List.of("1"));
+
+        QuizAttempt attempt = new QuizAttempt();
+        attempt.setQuizId("1");
+        attempt.setAnswers(List.of(userAnswer));
+
+        when(quizRepo.findById("1")).thenReturn(Optional.of(quiz));
+        when(quizAttemptRepo.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Instant before = Instant.now();
+        QuizAttempt result = quizAttemptService.submitAttempt(attempt);
+        Instant after = Instant.now();
+
+
+        assertThat(result.getScore()).isEqualTo(10);
+        assertThat(result.getMaxScore()).isEqualTo(10);
+        assertThat(result.getFinishedAt())
+                .isNotNull()
+                .isBetween(before, after);
     }
 }
