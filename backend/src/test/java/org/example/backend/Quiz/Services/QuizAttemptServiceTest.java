@@ -124,4 +124,44 @@ class QuizAttemptServiceTest {
         assertThat(result.getMaxScore()).isEqualTo(10);
 
     }
+
+    @Test
+    void submitAttempt_shouldCalculateMaxScore() {
+
+        AnswerOption correctOption1 = new AnswerOption();
+        correctOption1.setId("1");
+        correctOption1.setCorrect(true);
+
+        Question question1 = new Question();
+        question1.setId("1");
+        question1.setType(QuestionType.SINGLE_CHOICE);
+        question1.setPoints(10);
+        question1.setAnswerOptions(List.of(correctOption1));
+
+        AnswerOption correctOption2 = new AnswerOption();
+        correctOption2.setId("2");
+        correctOption2.setCorrect(true);
+
+        Question question2 = new Question();
+        question2.setId("2");
+        question2.setType(QuestionType.SINGLE_CHOICE);
+        question2.setPoints(20);
+        question2.setAnswerOptions(List.of(correctOption2));
+
+        Quiz quiz = new Quiz();
+        quiz.setId("1");
+        quiz.setQuestions(List.of(question1, question2));
+
+        QuizAttempt attempt = new QuizAttempt();
+        attempt.setQuizId("1");
+        attempt.setAnswers(List.of());
+
+        when(quizRepo.findById("1")).thenReturn(Optional.of(quiz));
+        when(quizAttemptRepo.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        QuizAttempt result = quizAttemptService.submitAttempt(attempt);
+
+        assertThat(result.getScore()).isEqualTo(0);
+        assertThat(result.getMaxScore()).isEqualTo(30);
+    }
 }
