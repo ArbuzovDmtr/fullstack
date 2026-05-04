@@ -16,9 +16,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
@@ -234,5 +236,18 @@ class QuizAttemptServiceTest {
         assertThat(result.getFinishedAt())
                 .isNotNull()
                 .isBetween(before, after);
+    }
+    @Test
+    void submitAttempt_shouldThrowExceptionWhenQuizNotFound() {
+
+        QuizAttempt attempt = new QuizAttempt();
+        attempt.setQuizId("999");
+        attempt.setAnswers(List.of());
+
+        when(quizRepo.findById("999")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> quizAttemptService.submitAttempt(attempt))
+                .isInstanceOf(NoSuchElementException.class)
+                .hasMessage("Quiz not found");
     }
 }
