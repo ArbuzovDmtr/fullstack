@@ -164,4 +164,35 @@ class QuizAttemptServiceTest {
         assertThat(result.getScore()).isEqualTo(0);
         assertThat(result.getMaxScore()).isEqualTo(30);
     }
+
+    @Test
+    void submitAttempt_shouldGivePointsForCorrectTextAnswerIgnoringCase() {
+
+        Question question = new Question();
+        question.setId("1");
+        question.setType(QuestionType.TEXT);
+        question.setPoints(10);
+        question.setAcceptedTextAnswers(List.of("test"));
+
+        Quiz quiz = new Quiz();
+        quiz.setId("1");
+        quiz.setQuestions(List.of(question));
+
+
+        UserAnswer userAnswer = new UserAnswer();
+        userAnswer.setQuestionId("1");
+        userAnswer.setTextAnswer("TeST");
+
+        QuizAttempt attempt = new QuizAttempt();
+        attempt.setQuizId("1");
+        attempt.setAnswers(List.of(userAnswer));
+
+        when(quizRepo.findById("1")).thenReturn(Optional.of(quiz));
+        when(quizAttemptRepo.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        QuizAttempt result = quizAttemptService.submitAttempt(attempt);
+
+        assertThat(result.getScore()).isEqualTo(10);
+        assertThat(result.getMaxScore()).isEqualTo(10);
+    }
 }
