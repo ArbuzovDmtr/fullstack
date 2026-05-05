@@ -74,6 +74,9 @@ public class QuizAttemptService {
             boolean exactMatch = question.getAcceptedTextAnswers().stream()
                     .anyMatch(answer -> answer.equalsIgnoreCase(userAnswer.getTextAnswer().trim()));
 
+            if (question.getAcceptedTextAnswers().isEmpty()) {
+                return false;
+            }
             if (exactMatch) {
                 return true;
             }
