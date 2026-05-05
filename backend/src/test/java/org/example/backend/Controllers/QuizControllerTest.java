@@ -11,12 +11,15 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
+import java.util.NoSuchElementException;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(QuizController.class)
@@ -84,5 +87,25 @@ class QuizControllerTest {
                 .andExpect(status().isOk());
 
         verify(quizService).deleteQuiz("1");
+    }
+
+    @Test
+    void getQuizById_shouldReturnNotFound_whenQuizDoesNotExist() throws Exception {
+        when(quizService.getQuizById("404"))
+                .thenThrow(new NoSuchElementException("Quiz not found"));
+
+        mockMvc.perform(get("/api/quizzes/404"))
+                .andExpect(status().isNotFound())
+                .andExpect(content().string("Quiz not found"));
+    }
+
+    @Test
+    void publishQuiz_shouldReturnBadRequest_whenQuizIsInvalid() throws Exception {
+        when(quizService.publishQuiz("1"))
+                .thenThrow(new IllegalArgumentException("Quiz title must not be empty"));
+
+        mockMvc.perform(patch("/api/quizzes/1/publish"))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string("Quiz title must not be empty"));
     }
 }

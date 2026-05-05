@@ -33,4 +33,14 @@ public class QuizController {
     public void deleteQuiz(@PathVariable String id) {
         quizService.deleteQuiz(id);
     }
+
+    @PatchMapping("/{id}/publish")
+    public Quiz publishQuiz(@PathVariable String id) {
+        return quizService.publishQuiz(id);
+    }
+
+    @PatchMapping("/{id}/unpublish")
+    public Quiz unpublishQuiz(@PathVariable String id) {
+        return quizService.unpublishQuiz(id);
+    }
 }
