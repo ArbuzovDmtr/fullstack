@@ -1,5 +1,6 @@
 package org.example.backend.Quiz.Services;
 
+
 import org.example.backend.Question.AnswerOption;
 import org.example.backend.Question.Question;
 import org.example.backend.Question.QuestionType;
@@ -35,6 +36,8 @@ class QuizAttemptServiceTest {
 
     @InjectMocks
     private QuizAttemptService quizAttemptService;
+
+
 
     @Test
     void submitAttempt_shouldGivePointsForCorrectSingleChoiceAnswer() {

@@ -1,6 +1,7 @@
 package org.example.backend.Quiz.Services;
 
 import lombok.RequiredArgsConstructor;
+import org.example.backend.OpenAI.Service.OpenAIService;
 import org.example.backend.Question.AnswerOption;
 import org.example.backend.Question.Question;
 import org.example.backend.Question.QuestionType;
@@ -21,6 +22,7 @@ public class QuizAttemptService {
 
     private final QuizAttemptRepo quizAttemptRepo;
     private final QuizRepo quizRepo;
+    private final OpenAIService openAIService;
 
     public QuizAttempt submitAttempt(QuizAttempt attempt) {
         Quiz quiz = quizRepo.findById(attempt.getQuizId())
@@ -65,10 +67,25 @@ public class QuizAttemptService {
         }
 
         if (question.getType() == QuestionType.TEXT) {
-            return question.getAcceptedTextAnswers().stream()
-                    .anyMatch(answer -> answer.equalsIgnoreCase(userAnswer.getTextAnswer()));
-        }
+            if (userAnswer.getTextAnswer() == null || userAnswer.getTextAnswer().isBlank()) {
+                return false;
+            }
 
-        return false;
-    }
+            boolean exactMatch = question.getAcceptedTextAnswers().stream()
+                    .anyMatch(answer -> answer.equalsIgnoreCase(userAnswer.getTextAnswer().trim()));
+
+            if (exactMatch) {
+                return true;
+            }
+
+            return question.getAcceptedTextAnswers().stream()
+                    .anyMatch(expectedAnswer ->
+                            openAIService.isQuizTextAnswerCorrect(
+                                    question.getText(),
+                                    expectedAnswer,
+                                    userAnswer.getTextAnswer()
+                            )
+                    );
+        }
+return false;}
 }
