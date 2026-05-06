@@ -4,6 +4,7 @@ import lombok.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import java.time.Instant;
+import java.util.Set;
 
 @Getter
 @Setter
@@ -15,10 +16,13 @@ public class User {
 
     @Id
     private String id;
-
-    private String username;
     private String email;
-    private String passwordHash;
+    private String name;
+    private String avatarUrl;
+    private String provider;
+    private String providerId;
+    @Builder.Default
+    private Set<Role> roles = Set.of(Role.USER);
     @Builder.Default
     private Instant createdAt = Instant.now();
 }
