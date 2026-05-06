@@ -42,6 +42,19 @@ public class QuizService {
         return quizRepo.findByPublishedTrue();
     }
 
+    public List<Quiz> getAllQuizzes() {
+        return quizRepo.findAll();
+    }
+
+    public Quiz getPublishedQuizById(String id) {
+        Quiz quiz = getQuizById(id);
+        if (!quiz.isPublished()) {
+            throw new NoSuchElementException("Quiz not found");
+        }
+
+        return quiz;
+    }
+
     public Quiz getQuizById(String id) {
         return quizRepo.findById(id)
                 .orElseThrow(() -> new NoSuchElementException("Quiz not found"));

@@ -19,6 +19,8 @@ export default function QuizPlay() {
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
 
   const startedAt = useRef(new Date().toISOString());
+  const questionStartedAt = useRef(Date.now());
+  const answersRef = useRef<UserAnswer[]>([]);
 
   useEffect(() => {
     if (!id) return;
@@ -63,6 +65,10 @@ export default function QuizPlay() {
     }
   }, [timeLeft]);
 
+  useEffect(() => {
+    answersRef.current = answers;
+  }, [answers]);
+
   const currentQuestion = quiz?.questions[currentIndex];
   const currentAnswer = answers.find((answer) => answer.questionId === currentQuestion?.id);
   const isLast = quiz ? currentIndex === quiz.questions.length - 1 : false;
@@ -70,26 +76,62 @@ export default function QuizPlay() {
   const progress = quiz ? ((currentIndex + 1) / quiz.questions.length) * 100 : 0;
 
   function setAnswer(answer: UserAnswer) {
-    setAnswers((previousAnswers) => [
-      ...previousAnswers.filter((previousAnswer) => previousAnswer.questionId !== answer.questionId),
-      answer,
-    ]);
+    setAnswers((previousAnswers) => {
+      const existingAnswer = previousAnswers.find((previousAnswer) => previousAnswer.questionId === answer.questionId);
+      return [
+        ...previousAnswers.filter((previousAnswer) => previousAnswer.questionId !== answer.questionId),
+        {
+          ...existingAnswer,
+          ...answer,
+          timeSpentSeconds: existingAnswer?.timeSpentSeconds,
+        },
+      ];
+    });
+  }
+
+  function withCurrentQuestionTime(sourceAnswers: UserAnswer[]) {
+    if (!currentQuestion) return sourceAnswers;
+
+    const elapsedSeconds = Math.max(0, Math.round((Date.now() - questionStartedAt.current) / 1000));
+    const existingAnswer = sourceAnswers.find((answer) => answer.questionId === currentQuestion.id);
+    const updatedAnswer: UserAnswer = {
+      ...existingAnswer,
+      questionId: currentQuestion.id,
+      timeSpentSeconds: (existingAnswer?.timeSpentSeconds ?? 0) + elapsedSeconds,
+    };
+
+    questionStartedAt.current = Date.now();
+
+    return [
+      ...sourceAnswers.filter((answer) => answer.questionId !== currentQuestion.id),
+      updatedAnswer,
+    ];
+  }
+
+  function goToQuestion(nextIndex: number) {
+    const updatedAnswers = withCurrentQuestionTime(answersRef.current);
+    answersRef.current = updatedAnswers;
+    setAnswers(updatedAnswers);
+    setCurrentIndex(nextIndex);
   }
 
   async function handleSubmit() {
     if (!quiz || submitting) return;
 
     setSubmitting(true);
+    const finalAnswers = withCurrentQuestionTime(answersRef.current);
+    answersRef.current = finalAnswers;
+    setAnswers(finalAnswers);
 
     try {
       const result = await submitAttempt({
         quizId: quiz.id,
         userId: TEMP_USER_ID,
-        answers,
+        answers: finalAnswers,
         startedAt: startedAt.current,
       });
 
-      navigate('/result', { state: { attempt: result, quizTitle: quiz.title } });
+      navigate(`/result/${result.id}`, { state: { attempt: result, quizTitle: quiz.title } });
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Error');
       setSubmitting(false);
@@ -220,7 +262,7 @@ export default function QuizPlay() {
       <footer className="bg-white border-t border-blue-100 px-6 py-5 shadow-sm">
         <div className="max-w-2xl mx-auto flex justify-between gap-3">
           <button
-            onClick={() => setCurrentIndex((index) => Math.max(0, index - 1))}
+            onClick={() => goToQuestion(Math.max(0, currentIndex - 1))}
             disabled={currentIndex === 0}
             className="px-5 py-2.5 bg-white border border-blue-200 text-blue-700 rounded-lg hover:bg-blue-50 disabled:opacity-40 disabled:cursor-not-allowed transition text-sm"
           >
@@ -237,7 +279,7 @@ export default function QuizPlay() {
             </button>
           ) : (
             <button
-              onClick={() => setCurrentIndex((index) => index + 1)}
+              onClick={() => goToQuestion(currentIndex + 1)}
               className={`px-8 py-2.5 rounded-lg font-semibold transition text-sm ${
                 hasAnswer
                   ? 'bg-blue-600 text-white hover:bg-blue-700'

@@ -2,8 +2,11 @@ package org.example.backend.Controllers;
 
 
 import lombok.RequiredArgsConstructor;
+import org.example.backend.Quiz.AttemptResult;
 import org.example.backend.Quiz.QuizAttempt;
 import org.example.backend.Quiz.Services.QuizAttemptService;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -19,6 +22,11 @@ public class QuizAttemptController {
     @PostMapping("/attempts")
     public QuizAttempt submitAttempt(@RequestBody QuizAttempt attempt) {
         return quizAttemptService.submitAttempt(attempt);
+    }
+
+    @GetMapping("/attempts/{attemptId}/result")
+    public AttemptResult getAttemptResult(@PathVariable String attemptId) {
+        return quizAttemptService.getAttemptResult(attemptId);
     }
 
 }

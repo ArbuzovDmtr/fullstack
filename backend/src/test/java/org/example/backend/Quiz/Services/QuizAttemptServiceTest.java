@@ -4,6 +4,7 @@ package org.example.backend.Quiz.Services;
 import org.example.backend.Question.AnswerOption;
 import org.example.backend.Question.Question;
 import org.example.backend.Question.QuestionType;
+import org.example.backend.Quiz.AttemptResult;
 import org.example.backend.Quiz.Quiz;
 import org.example.backend.Quiz.QuizAttempt;
 import org.example.backend.Quiz.Repositories.QuizAttemptRepo;
@@ -252,5 +253,57 @@ class QuizAttemptServiceTest {
         assertThatThrownBy(() -> quizAttemptService.submitAttempt(attempt))
                 .isInstanceOf(NoSuchElementException.class)
                 .hasMessage("Quiz not found");
+    }
+
+    @Test
+    void getAttemptResult_shouldReturnCorrectAnswersUserAnswersAndTime() {
+        AnswerOption correctOption = new AnswerOption();
+        correctOption.setId("1");
+        correctOption.setText("Correct answer");
+        correctOption.setCorrect(true);
+
+        AnswerOption wrongOption = new AnswerOption();
+        wrongOption.setId("2");
+        wrongOption.setText("Wrong answer");
+        wrongOption.setCorrect(false);
+
+        Question question = new Question();
+        question.setId("question-1");
+        question.setText("Question text");
+        question.setType(QuestionType.SINGLE_CHOICE);
+        question.setPoints(10);
+        question.setAnswerOptions(List.of(correctOption, wrongOption));
+
+        Quiz quiz = new Quiz();
+        quiz.setId("quiz-1");
+        quiz.setTitle("Quiz title");
+        quiz.setQuestions(List.of(question));
+
+        UserAnswer userAnswer = new UserAnswer();
+        userAnswer.setQuestionId("question-1");
+        userAnswer.setSelectedOptionIds(List.of("2"));
+        userAnswer.setTimeSpentSeconds(7);
+
+        QuizAttempt attempt = new QuizAttempt();
+        attempt.setId("attempt-1");
+        attempt.setQuizId("quiz-1");
+        attempt.setAnswers(List.of(userAnswer));
+        attempt.setScore(0);
+        attempt.setMaxScore(10);
+        attempt.setStartedAt(Instant.parse("2026-05-06T10:00:00Z"));
+        attempt.setFinishedAt(Instant.parse("2026-05-06T10:00:30Z"));
+
+        when(quizAttemptRepo.findById("attempt-1")).thenReturn(Optional.of(attempt));
+        when(quizRepo.findById("quiz-1")).thenReturn(Optional.of(quiz));
+
+        AttemptResult result = quizAttemptService.getAttemptResult("attempt-1");
+
+        assertThat(result.attemptId()).isEqualTo("attempt-1");
+        assertThat(result.quizTitle()).isEqualTo("Quiz title");
+        assertThat(result.totalTimeSeconds()).isEqualTo(30);
+        assertThat(result.questions().getFirst().correct()).isFalse();
+        assertThat(result.questions().getFirst().correctOptions().getFirst().text()).isEqualTo("Correct answer");
+        assertThat(result.questions().getFirst().userSelectedOptions().getFirst().text()).isEqualTo("Wrong answer");
+        assertThat(result.questions().getFirst().timeSpentSeconds()).isEqualTo(7);
     }
 }

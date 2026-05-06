@@ -1,18 +1,27 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { fetchCurrentUser, login, logout } from '../api/auth';
 import { deleteQuiz, fetchQuizzes } from '../api/quiz';
-import type { Quiz } from '../types';
+import type { Quiz, User } from '../types';
 
 export default function QuizList() {
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [deletingQuizId, setDeletingQuizId] = useState<string | null>(null);
   const navigate = useNavigate();
+  const isAdmin = currentUser?.roles?.includes('ADMIN') ?? false;
 
   useEffect(() => {
-    fetchQuizzes()
-      .then(setQuizzes)
+    Promise.all([
+      fetchQuizzes(),
+      fetchCurrentUser().catch(() => null),
+    ])
+      .then(([loadedQuizzes, loadedUser]) => {
+        setQuizzes(loadedQuizzes);
+        setCurrentUser(loadedUser);
+      })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
   }, []);
@@ -72,9 +81,43 @@ export default function QuizList() {
   return (
     <div className="min-h-screen bg-gray-100 text-gray-900">
       <header className="bg-white border-b border-blue-100 px-6 py-5 shadow-sm">
-        <div className="max-w-4xl mx-auto flex items-baseline gap-3">
-          <h1 className="text-2xl font-bold tracking-tight text-blue-700">Quiz</h1>
-          <span className="text-gray-500 text-sm">platform</span>
+        <div className="max-w-4xl mx-auto flex items-center justify-between gap-4">
+          <div className="flex items-baseline gap-3">
+            <h1 className="text-2xl font-bold tracking-tight text-blue-700">Quiz</h1>
+            <span className="text-gray-500 text-sm">platform</span>
+          </div>
+
+          <div className="flex items-center gap-3">
+            {currentUser ? (
+              <>
+                {currentUser.avatarUrl && (
+                  <img
+                    src={currentUser.avatarUrl}
+                    alt=""
+                    className="w-9 h-9 rounded-full border border-blue-100"
+                  />
+                )}
+                <span className="hidden sm:inline text-sm text-gray-700 max-w-44 truncate">
+                  {currentUser.name || currentUser.email || 'User'}
+                </span>
+                <button
+                  type="button"
+                  onClick={logout}
+                  className="px-4 py-2 bg-white text-blue-700 border border-blue-200 rounded-lg hover:bg-blue-50 transition"
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
+              <button
+                type="button"
+                onClick={login}
+                className="px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition"
+              >
+                Login
+              </button>
+            )}
+          </div>
         </div>
       </header>
 
@@ -85,13 +128,15 @@ export default function QuizList() {
             Published quizzes: {quizzes.length}
           </p>
         </section>
-        <div style={{ marginBottom: '16px' }}>
-          <Link to="/admin/create">
-            <button className="px-5 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition">
-              Create Quiz
-            </button>
-          </Link>
-        </div>
+        {isAdmin && (
+          <div style={{ marginBottom: '16px' }}>
+            <Link to="/admin/create">
+              <button className="px-5 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition">
+                Create Quiz
+              </button>
+            </Link>
+          </div>
+        )}
         {quizzes.length === 0 ? (
           <div className="bg-white border border-dashed border-blue-200 rounded-xl p-12 text-center shadow-sm">
             <h3 className="text-lg font-semibold text-blue-700 mb-2">No quizzes yet</h3>
@@ -134,14 +179,16 @@ export default function QuizList() {
                   </button>
 
                   <div className="flex items-start gap-3">
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteQuiz(quiz)}
-                      disabled={deletingQuizId === quiz.id}
-                      className="px-3 py-2 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 disabled:opacity-60 disabled:cursor-not-allowed transition"
-                    >
-                      {deletingQuizId === quiz.id ? 'Deleting...' : 'Delete'}
-                    </button>
+                    {isAdmin && (
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteQuiz(quiz)}
+                        disabled={deletingQuizId === quiz.id}
+                        className="px-3 py-2 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 disabled:opacity-60 disabled:cursor-not-allowed transition"
+                      >
+                        {deletingQuizId === quiz.id ? 'Deleting...' : 'Delete'}
+                      </button>
+                    )}
 
                     <button
                       type="button"

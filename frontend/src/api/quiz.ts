@@ -1,4 +1,4 @@
-import type { Quiz, QuizAttempt,CreateQuizPayload} from '../types';
+import type { AttemptResult, Quiz, QuizAttempt, CreateQuizPayload } from '../types';
 
 
 const BASE = '/api';
@@ -25,10 +25,16 @@ export async function submitAttempt(attempt: QuizAttempt): Promise<QuizAttempt> 
   return res.json();
 }
 
+export async function fetchAttemptResult(attemptId: string): Promise<AttemptResult> {
+  const res = await fetch(`${BASE}/attempts/${attemptId}/result`);
+  if (!res.ok) throw new Error('Can`t load attempt result');
+  return res.json();
+}
+
 
 
 export async function createQuiz(payload: CreateQuizPayload): Promise<Quiz> {
-  const res = await fetch(`${BASE}/quizzes`, {
+  const res = await fetch(`${BASE}/admin/quizzes`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -44,7 +50,7 @@ export async function createQuiz(payload: CreateQuizPayload): Promise<Quiz> {
 }
 
 export async function deleteQuiz(id: string): Promise<void> {
-  const res = await fetch(`${BASE}/quizzes/${id}`, {
+  const res = await fetch(`${BASE}/admin/quizzes/${id}`, {
     method: 'DELETE',
   });
 

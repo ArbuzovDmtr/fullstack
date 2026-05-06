@@ -5,6 +5,7 @@ import org.example.backend.OpenAI.Service.OpenAIService;
 import org.example.backend.Question.AnswerOption;
 import org.example.backend.Question.Question;
 import org.example.backend.Question.QuestionType;
+import org.example.backend.Quiz.AttemptResult;
 import org.example.backend.Quiz.Quiz;
 import org.example.backend.Quiz.QuizAttempt;
 import org.example.backend.Quiz.Repositories.QuizAttemptRepo;
@@ -12,9 +13,13 @@ import org.example.backend.Quiz.Repositories.QuizRepo;
 import org.example.backend.User.UserAnswer;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.time.Instant;
+import java.util.HashSet;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Set;
+
 
 @Service
 @RequiredArgsConstructor
@@ -28,6 +33,9 @@ public class QuizAttemptService {
         Quiz quiz = quizRepo.findById(attempt.getQuizId())
                 .orElseThrow(() -> new NoSuchElementException("Quiz not found"));
 
+        if (attempt.getAnswers() == null) {
+            attempt.setAnswers(List.of());
+        }
 
         int score = 0;
         int maxScore = 0;
@@ -56,8 +64,37 @@ public class QuizAttemptService {
         return quizAttemptRepo.save(attempt);
     }
 
+    public AttemptResult getAttemptResult(String attemptId) {
+        QuizAttempt attempt = quizAttemptRepo.findById(attemptId)
+                .orElseThrow(() -> new NoSuchElementException("Attempt not found"));
+
+        Quiz quiz = quizRepo.findById(attempt.getQuizId())
+                .orElseThrow(() -> new NoSuchElementException("Quiz not found"));
+
+        List<UserAnswer> answers = attempt.getAnswers() == null ? List.of() : attempt.getAnswers();
+        List<AttemptResult.QuestionResult> questionResults = quiz.getQuestions().stream()
+                .map(question -> toQuestionResult(question, answers))
+                .toList();
+
+        return new AttemptResult(
+                attempt.getId(),
+                attempt.getQuizId(),
+                quiz.getTitle(),
+                attempt.getScore(),
+                attempt.getMaxScore(),
+                attempt.getStartedAt(),
+                attempt.getFinishedAt(),
+                totalTimeSeconds(attempt, questionResults),
+                questionResults
+        );
+    }
+
     private boolean isAnswerCorrect( Question question, UserAnswer userAnswer) {
         if (question.getType() == QuestionType.SINGLE_CHOICE) {
+            if (question.getAnswerOptions() == null) {
+                return false;
+            }
+
             List<String> correctOptionIds = question.getAnswerOptions().stream()
                     .filter(AnswerOption::isCorrect)
                     .map(AnswerOption::getId)
@@ -71,17 +108,21 @@ public class QuizAttemptService {
                 return false;
             }
 
-            boolean exactMatch = question.getAcceptedTextAnswers().stream()
+            List<String> acceptedTextAnswers = question.getAcceptedTextAnswers() == null
+                    ? List.of()
+                    : question.getAcceptedTextAnswers();
+
+            boolean exactMatch = acceptedTextAnswers.stream()
                     .anyMatch(answer -> answer.equalsIgnoreCase(userAnswer.getTextAnswer().trim()));
 
-            if (question.getAcceptedTextAnswers().isEmpty()) {
+            if (acceptedTextAnswers.isEmpty()) {
                 return false;
             }
             if (exactMatch) {
                 return true;
             }
 
-            return question.getAcceptedTextAnswers().stream()
+            return acceptedTextAnswers.stream()
                     .anyMatch(expectedAnswer ->
                             openAIService.isQuizTextAnswerCorrect(
                                     question.getText(),
@@ -90,5 +131,66 @@ public class QuizAttemptService {
                             )
                     );
         }
-return false;}
+        return false;
+    }
+
+    private AttemptResult.QuestionResult toQuestionResult(Question question, List<UserAnswer> answers) {
+        UserAnswer userAnswer = answers.stream()
+                .filter(answer -> answer.getQuestionId().equals(question.getId()))
+                .findFirst()
+                .orElse(null);
+
+        List<AttemptResult.AnswerResult> correctOptions = correctOptions(question);
+        List<AttemptResult.AnswerResult> userSelectedOptions = userSelectedOptions(question, userAnswer);
+        List<String> acceptedTextAnswers = question.getAcceptedTextAnswers() == null
+                ? List.of()
+                : question.getAcceptedTextAnswers();
+
+        return new AttemptResult.QuestionResult(
+                question.getId(),
+                question.getText(),
+                question.getType(),
+                question.getPoints(),
+                userAnswer != null && isAnswerCorrect(question, userAnswer),
+                correctOptions,
+                userSelectedOptions,
+                acceptedTextAnswers,
+                userAnswer == null ? null : userAnswer.getTextAnswer(),
+                userAnswer == null || userAnswer.getTimeSpentSeconds() == null ? 0 : userAnswer.getTimeSpentSeconds()
+        );
+    }
+
+    private List<AttemptResult.AnswerResult> correctOptions(Question question) {
+        if (question.getAnswerOptions() == null) {
+            return List.of();
+        }
+
+        return question.getAnswerOptions().stream()
+                .filter(AnswerOption::isCorrect)
+                .map(option -> new AttemptResult.AnswerResult(option.getId(), option.getText()))
+                .toList();
+    }
+
+    private List<AttemptResult.AnswerResult> userSelectedOptions(Question question, UserAnswer userAnswer) {
+        if (question.getAnswerOptions() == null || userAnswer == null || userAnswer.getSelectedOptionIds() == null) {
+            return List.of();
+        }
+
+        Set<String> selectedOptionIds = new HashSet<>(userAnswer.getSelectedOptionIds());
+
+        return question.getAnswerOptions().stream()
+                .filter(option -> selectedOptionIds.contains(option.getId()))
+                .map(option -> new AttemptResult.AnswerResult(option.getId(), option.getText()))
+                .toList();
+    }
+
+    private long totalTimeSeconds(QuizAttempt attempt, List<AttemptResult.QuestionResult> questionResults) {
+        if (attempt.getStartedAt() != null && attempt.getFinishedAt() != null) {
+            return Math.max(0, Duration.between(attempt.getStartedAt(), attempt.getFinishedAt()).toSeconds());
+        }
+
+        return questionResults.stream()
+                .mapToLong(AttemptResult.QuestionResult::timeSpentSeconds)
+                .sum();
+    }
 }

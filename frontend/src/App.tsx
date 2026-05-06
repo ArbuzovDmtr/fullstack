@@ -12,6 +12,7 @@ export default function App() {
           <Route path="/admin/create" element={<CreateQuiz />} />
         <Route path="/quiz/:id" element={<QuizPlay />} />
         <Route path="/result" element={<QuizResult />} />
+        <Route path="/result/:attemptId" element={<QuizResult />} />
 
       </Routes>
     </BrowserRouter>
