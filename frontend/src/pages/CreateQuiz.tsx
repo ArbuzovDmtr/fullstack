@@ -167,7 +167,7 @@ export default function CreateQuiz() {
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 className="border border-blue-200 rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-blue-100"
-                placeholder="Java basics quiz"
+                placeholder="Name of quiz"
               />
             </label>
 
@@ -178,7 +178,7 @@ export default function CreateQuiz() {
                 onChange={(e) => setDescription(e.target.value)}
                 className="border border-blue-200 rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-blue-100 resize-none"
                 rows={3}
-                placeholder="Short quiz description"
+                placeholder="Quiz description"
               />
             </label>
 
@@ -298,7 +298,7 @@ function QuestionEditor({
             value={question.text}
             onChange={(e) => onChange({ ...question, text: e.target.value })}
             className="border border-blue-200 rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-blue-100"
-            placeholder="What is JVM?"
+            placeholder="Text of question"
           />
         </label>
 
