@@ -1,0 +1,54 @@
+import type { Quiz, QuizAttempt,CreateQuizPayload} from '../types';
+
+
+const BASE = '/api';
+
+export async function fetchQuizzes(): Promise<Quiz[]> {
+  const res = await fetch(`${BASE}/quizzes`);
+  if (!res.ok) throw new Error('Can`t load quizzes');
+  return res.json();
+}
+
+export async function fetchQuiz(id: string): Promise<Quiz> {
+  const res = await fetch(`${BASE}/quizzes/${id}`);
+  if (!res.ok) throw new Error('Quiz not found');
+  return res.json();
+}
+
+export async function submitAttempt(attempt: QuizAttempt): Promise<QuizAttempt> {
+  const res = await fetch(`${BASE}/attempts`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(attempt),
+  });
+  if (!res.ok) throw new Error('Error by sending results');
+  return res.json();
+}
+
+
+
+export async function createQuiz(payload: CreateQuizPayload): Promise<Quiz> {
+  const res = await fetch(`${BASE}/quizzes`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    throw new Error('Failed to create quiz');
+  }
+
+  return res.json();
+}
+
+export async function deleteQuiz(id: string): Promise<void> {
+  const res = await fetch(`${BASE}/quizzes/${id}`, {
+    method: 'DELETE',
+  });
+
+  if (!res.ok) {
+    throw new Error('Failed to delete quiz');
+  }
+}
