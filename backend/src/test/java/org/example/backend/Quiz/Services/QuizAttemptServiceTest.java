@@ -1,6 +1,7 @@
 package org.example.backend.Quiz.Services;
 
 
+import org.example.backend.Leaderboard.LeaderboardService;
 import org.example.backend.Question.AnswerOption;
 import org.example.backend.Question.Question;
 import org.example.backend.Question.QuestionType;
@@ -26,6 +27,8 @@ import java.util.Optional;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -36,6 +39,10 @@ class QuizAttemptServiceTest {
 
     @Mock
     private QuizRepo quizRepo;
+
+
+    @Mock
+    private LeaderboardService leaderboardService;
 
 
     @InjectMocks
@@ -307,6 +314,60 @@ class QuizAttemptServiceTest {
         assertThat(result.getScore()).isEqualTo(0);
         assertThat(result.getMaxScore()).isEqualTo(10);
     }
+
+    @Test
+    void submitAttempt_shouldSaveLeaderboardResultForUser() {
+        AnswerOption correctOption = new AnswerOption();
+        correctOption.setId("1");
+        correctOption.setCorrect(true);
+
+        Question question = new Question();
+        question.setId("question-1");
+        question.setType(QuestionType.SINGLE_CHOICE);
+        question.setPoints(10);
+        question.setAnswerOptions(List.of(correctOption));
+
+        Quiz quiz = new Quiz();
+        quiz.setId("quiz-1");
+        quiz.setQuestions(List.of(question));
+
+        UserAnswer userAnswer = new UserAnswer();
+        userAnswer.setQuestionId("question-1");
+        userAnswer.setSelectedOptionIds(List.of("1"));
+        userAnswer.setTimeSpentSeconds(14);
+
+        QuizAttempt attempt = new QuizAttempt();
+        attempt.setQuizId("quiz-1");
+        attempt.setUserId("user-1");
+        attempt.setAnswers(List.of(userAnswer));
+
+        when(quizRepo.findById("quiz-1")).thenReturn(Optional.of(quiz));
+        when(quizAttemptRepo.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        QuizAttempt result = quizAttemptService.submitAttempt(attempt);
+
+        assertThat(result.getScore()).isEqualTo(10);
+        verify(leaderboardService).saveResult("user-1", "quiz-1", 10, 14);
+    }
+
+    @Test
+    void submitAttempt_shouldNotSaveLeaderboardResultWithoutUser() {
+        Quiz quiz = new Quiz();
+        quiz.setId("quiz-1");
+        quiz.setQuestions(List.of());
+
+        QuizAttempt attempt = new QuizAttempt();
+        attempt.setQuizId("quiz-1");
+        attempt.setAnswers(List.of());
+
+        when(quizRepo.findById("quiz-1")).thenReturn(Optional.of(quiz));
+        when(quizAttemptRepo.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        quizAttemptService.submitAttempt(attempt);
+
+        verifyNoInteractions(leaderboardService);
+    }
+
     @Test
     void submitAttempt_shouldSaveAttemptWithScoreAndFinishedAt() {
 

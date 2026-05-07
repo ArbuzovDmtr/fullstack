@@ -63,7 +63,10 @@ public class QuizAttemptService {
         attempt.setMaxScore(maxScore);
         attempt.setFinishedAt(Instant.now());
 
-        return quizAttemptRepo.save(attempt);
+        QuizAttempt savedAttempt = quizAttemptRepo.save(attempt);
+        saveLeaderboardResult(savedAttempt);
+
+        return savedAttempt;
     }
 
     public AttemptResult getAttemptResult(String attemptId) {
@@ -195,6 +198,35 @@ public class QuizAttemptService {
 
         return questionResults.stream()
                 .mapToLong(AttemptResult.QuestionResult::timeSpentSeconds)
+                .sum();
+    }
+
+    private void saveLeaderboardResult(QuizAttempt attempt) {
+        if (attempt.getUserId() == null || attempt.getUserId().isBlank()) {
+            return;
+        }
+
+        leaderboardService.saveResult(
+                attempt.getUserId(),
+                attempt.getQuizId(),
+                attempt.getScore(),
+                attemptTimeSeconds(attempt)
+        );
+    }
+
+    private long attemptTimeSeconds(QuizAttempt attempt) {
+        if (attempt.getStartedAt() != null && attempt.getFinishedAt() != null) {
+            return Math.max(0, Duration.between(attempt.getStartedAt(), attempt.getFinishedAt()).toSeconds());
+        }
+
+        if (attempt.getAnswers() == null) {
+            return 0;
+        }
+
+        return attempt.getAnswers().stream()
+                .map(UserAnswer::getTimeSpentSeconds)
+                .filter(seconds -> seconds != null && seconds > 0)
+                .mapToLong(Integer::longValue)
                 .sum();
     }
 }
