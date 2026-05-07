@@ -1,6 +1,7 @@
 package org.example.backend.Quiz.Services;
 
 import lombok.RequiredArgsConstructor;
+import org.example.backend.Leaderboard.LeaderboardService;
 import org.example.backend.OpenAI.Service.OpenAIService;
 import org.example.backend.Question.AnswerOption;
 import org.example.backend.Question.Question;
@@ -28,6 +29,7 @@ public class QuizAttemptService {
     private final QuizAttemptRepo quizAttemptRepo;
     private final QuizRepo quizRepo;
     private final OpenAIService openAIService;
+    private final LeaderboardService leaderboardService;
 
     public QuizAttempt submitAttempt(QuizAttempt attempt) {
         Quiz quiz = quizRepo.findById(attempt.getQuizId())
@@ -88,6 +90,8 @@ public class QuizAttemptService {
                 questionResults
         );
     }
+
+
 
     private boolean isAnswerCorrect( Question question, UserAnswer userAnswer) {
         if (question.getType() == QuestionType.SINGLE_CHOICE) {

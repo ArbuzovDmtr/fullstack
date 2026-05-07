@@ -12,8 +12,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
@@ -106,5 +108,33 @@ class QuizServiceTest {
         Quiz savedQuiz = quizService.createQuiz(quiz);
 
         assertThat(savedQuiz).isSameAs(quiz);
+    }
+
+    @Test
+    void publishQuiz_shouldRejectQuizWithNoQuestions() {
+        Quiz quiz = new Quiz();
+        quiz.setId("1");
+        quiz.setTitle("Empty quiz");
+        quiz.setQuestions(List.of());
+
+        when(quizRepo.findById("1")).thenReturn(Optional.of(quiz));
+
+        assertThatThrownBy(() -> quizService.publishQuiz("1"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Quiz must contain at least one question");
+    }
+
+    @Test
+    void publishQuiz_shouldRejectQuizWithNullQuestions() {
+        Quiz quiz = new Quiz();
+        quiz.setId("1");
+        quiz.setTitle("Empty quiz");
+        quiz.setQuestions(null);
+
+        when(quizRepo.findById("1")).thenReturn(Optional.of(quiz));
+
+        assertThatThrownBy(() -> quizService.publishQuiz("1"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Quiz must contain at least one question");
     }
 }
