@@ -10,6 +10,8 @@ import org.example.backend.Quiz.QuizAttempt;
 import org.example.backend.Quiz.Repositories.QuizAttemptRepo;
 import org.example.backend.Quiz.Repositories.QuizRepo;
 import org.example.backend.User.UserAnswer;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -34,6 +36,7 @@ class QuizAttemptServiceTest {
 
     @Mock
     private QuizRepo quizRepo;
+
 
     @InjectMocks
     private QuizAttemptService quizAttemptService;
@@ -173,7 +176,68 @@ class QuizAttemptServiceTest {
     }
 
     @Test
-    void submitAttempt_shouldGivePointsForCorrectTextAnswerIgnoringCase() {
+    void submitAttempt_shouldReturnZeroScoreForEmptyQuiz() {
+        Quiz quiz = new Quiz();
+        quiz.setId("1");
+        quiz.setQuestions(List.of());
+
+        UserAnswer invalidAnswer = new UserAnswer();
+        invalidAnswer.setQuestionId("missing-question");
+        invalidAnswer.setSelectedOptionIds(List.of("1"));
+
+        QuizAttempt attempt = new QuizAttempt();
+        attempt.setQuizId("1");
+        attempt.setAnswers(List.of(invalidAnswer));
+
+        when(quizRepo.findById("1")).thenReturn(Optional.of(quiz));
+        when(quizAttemptRepo.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        QuizAttempt result = quizAttemptService.submitAttempt(attempt);
+
+        assertThat(result.getScore()).isEqualTo(0);
+        assertThat(result.getMaxScore()).isEqualTo(0);
+    }
+
+    @Test
+    void submitAttempt_shouldGiveZeroPointsForInvalidAnswers() {
+        AnswerOption correctOption = new AnswerOption();
+        correctOption.setId("1");
+        correctOption.setCorrect(true);
+
+        Question question = new Question();
+        question.setId("question-1");
+        question.setType(QuestionType.SINGLE_CHOICE);
+        question.setPoints(10);
+        question.setAnswerOptions(List.of(correctOption));
+
+        Quiz quiz = new Quiz();
+        quiz.setId("1");
+        quiz.setQuestions(List.of(question));
+
+        UserAnswer unknownQuestionAnswer = new UserAnswer();
+        unknownQuestionAnswer.setQuestionId("unknown-question");
+        unknownQuestionAnswer.setSelectedOptionIds(List.of("1"));
+
+        UserAnswer invalidOptionAnswer = new UserAnswer();
+        invalidOptionAnswer.setQuestionId("question-1");
+        invalidOptionAnswer.setSelectedOptionIds(List.of("missing-option"));
+
+        QuizAttempt attempt = new QuizAttempt();
+        attempt.setQuizId("1");
+        attempt.setAnswers(List.of(unknownQuestionAnswer, invalidOptionAnswer));
+
+        when(quizRepo.findById("1")).thenReturn(Optional.of(quiz));
+        when(quizAttemptRepo.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        QuizAttempt result = quizAttemptService.submitAttempt(attempt);
+
+        assertThat(result.getScore()).isEqualTo(0);
+        assertThat(result.getMaxScore()).isEqualTo(10);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"test", "TEST", "TeST", "  tEsT  "})
+    void submitAttempt_shouldGivePointsForCorrectTextAnswerIgnoringCase(String textAnswer) {
 
         Question question = new Question();
         question.setId("1");
@@ -188,7 +252,7 @@ class QuizAttemptServiceTest {
 
         UserAnswer userAnswer = new UserAnswer();
         userAnswer.setQuestionId("1");
-        userAnswer.setTextAnswer("TeST");
+        userAnswer.setTextAnswer(textAnswer);
 
         QuizAttempt attempt = new QuizAttempt();
         attempt.setQuizId("1");
@@ -200,6 +264,47 @@ class QuizAttemptServiceTest {
         QuizAttempt result = quizAttemptService.submitAttempt(attempt);
 
         assertThat(result.getScore()).isEqualTo(10);
+        assertThat(result.getMaxScore()).isEqualTo(10);
+    }
+
+    @Test
+    void submitAttempt_shouldGiveZeroPointsForPartiallyCorrectSingleChoiceAnswer() {
+        AnswerOption correctOption1 = new AnswerOption();
+        correctOption1.setId("1");
+        correctOption1.setCorrect(true);
+
+        AnswerOption correctOption2 = new AnswerOption();
+        correctOption2.setId("2");
+        correctOption2.setCorrect(true);
+
+        AnswerOption wrongOption = new AnswerOption();
+        wrongOption.setId("3");
+        wrongOption.setCorrect(false);
+
+        Question question = new Question();
+        question.setId("question-1");
+        question.setType(QuestionType.SINGLE_CHOICE);
+        question.setPoints(10);
+        question.setAnswerOptions(List.of(correctOption1, correctOption2, wrongOption));
+
+        Quiz quiz = new Quiz();
+        quiz.setId("1");
+        quiz.setQuestions(List.of(question));
+
+        UserAnswer userAnswer = new UserAnswer();
+        userAnswer.setQuestionId("question-1");
+        userAnswer.setSelectedOptionIds(List.of("1"));
+
+        QuizAttempt attempt = new QuizAttempt();
+        attempt.setQuizId("1");
+        attempt.setAnswers(List.of(userAnswer));
+
+        when(quizRepo.findById("1")).thenReturn(Optional.of(quiz));
+        when(quizAttemptRepo.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        QuizAttempt result = quizAttemptService.submitAttempt(attempt);
+
+        assertThat(result.getScore()).isEqualTo(0);
         assertThat(result.getMaxScore()).isEqualTo(10);
     }
     @Test
