@@ -185,7 +185,7 @@ export default function QuizPlay() {
             onClick={() => navigate('/')}
             className="text-blue-700 hover:text-blue-900 transition-colors text-sm font-medium"
           >
-            ← Выйти
+            ← Exit
           </button>
 
           <div className="flex items-center gap-4">
@@ -266,7 +266,7 @@ export default function QuizPlay() {
             disabled={currentIndex === 0}
             className="px-5 py-2.5 bg-white border border-blue-200 text-blue-700 rounded-lg hover:bg-blue-50 disabled:opacity-40 disabled:cursor-not-allowed transition text-sm"
           >
-            ← Назад
+            ← Back
           </button>
 
           {isLast ? (
@@ -286,7 +286,7 @@ export default function QuizPlay() {
                   : 'bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100'
               }`}
             >
-              Далее →
+              Next →
             </button>
           )}
         </div>

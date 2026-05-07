@@ -274,10 +274,10 @@ function formatAverageTime(result: AttemptResult) {
   if (result.questions.length === 0) return '0 sec';
   return formatTime(Math.round(result.totalTimeSeconds / result.questions.length));
 }
-
+const locale = navigator.language.startsWith('de') ? 'de-DE' : 'en-US';
 function formatDate(value?: string) {
   if (!value) return 'Unknown';
-  return new Intl.DateTimeFormat(undefined, {
+  return new Intl.DateTimeFormat(locale, {
     dateStyle: 'medium',
     timeStyle: 'short',
   }).format(new Date(value));
