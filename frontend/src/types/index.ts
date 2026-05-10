@@ -75,6 +75,14 @@ export interface AttemptResult {
   questions: AttemptQuestionResult[];
 }
 
+export interface LeaderboardEntry {
+  id?: string;
+  userId: string;
+  quizId: string;
+  score: number;
+  timeSpentSeconds: number;
+}
+
 export type UserRole = 'USER' | 'ADMIN';
 
 export interface User {

@@ -1,4 +1,4 @@
-import type { AttemptResult, Quiz, QuizAttempt, CreateQuizPayload } from '../types';
+import type { AttemptResult, CreateQuizPayload, LeaderboardEntry, Quiz, QuizAttempt } from '../types';
 
 
 const BASE = '/api';
@@ -28,6 +28,12 @@ export async function submitAttempt(attempt: QuizAttempt): Promise<QuizAttempt> 
 export async function fetchAttemptResult(attemptId: string): Promise<AttemptResult> {
   const res = await fetch(`${BASE}/attempts/${attemptId}/result`);
   if (!res.ok) throw new Error('Can`t load attempt result');
+  return res.json();
+}
+
+export async function fetchLeaderboard(quizId: string): Promise<LeaderboardEntry[]> {
+  const res = await fetch(`${BASE}/leaderboard/${quizId}`);
+  if (!res.ok) throw new Error('Can`t load leaderboard');
   return res.json();
 }
 
