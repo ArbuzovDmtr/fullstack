@@ -1,14 +1,16 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { createQuiz } from '../api/quiz';
-import type { CreateQuizPayload, CreateQuestionPayload, QuestionType } from '../types';
+import { useEffect, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { createQuiz, fetchAdminQuiz, updateQuiz } from '../api/quiz';
+import type { CreateQuizPayload, CreateQuestionPayload, Question, QuestionType } from '../types';
 
 type FormAnswerOption = {
+  id?: string;
   text: string;
   correct: boolean;
 };
 
 type FormQuestion = {
+  id?: string;
   text: string;
   type: QuestionType;
   points: number;
@@ -29,13 +31,32 @@ const emptyQuestion = (): FormQuestion => ({
 
 export default function CreateQuiz() {
   const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
+  const isEditing = Boolean(id);
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [timeLimitSeconds, setTimeLimitSeconds] = useState<number>(300);
   const [questions, setQuestions] = useState<FormQuestion[]>([emptyQuestion()]);
+  const [published, setPublished] = useState(false);
+  const [loading, setLoading] = useState(isEditing);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!id) return;
+
+    fetchAdminQuiz(id)
+      .then((quiz) => {
+        setTitle(quiz.title ?? '');
+        setDescription(quiz.description ?? '');
+        setTimeLimitSeconds(quiz.timeLimitSeconds ?? 0);
+        setQuestions(quiz.questions?.length ? quiz.questions.map(toFormQuestion) : [emptyQuestion()]);
+        setPublished(quiz.published);
+      })
+      .catch((e) => setError(e instanceof Error ? e.message : 'Failed to load quiz'))
+      .finally(() => setLoading(false));
+  }, [id]);
 
   function updateQuestion(index: number, updatedQuestion: FormQuestion) {
     setQuestions((currentQuestions) =>
@@ -53,18 +74,20 @@ export default function CreateQuiz() {
     const cleanedQuestions: CreateQuestionPayload[] = questions.map((question, index) => {
       if (question.type === 'SINGLE_CHOICE') {
         return {
+          id: question.id,
           text: question.text.trim(),
           type: question.type,
           points: question.points,
           orderIndex: index + 1,
           answerOptions: question.answerOptions
             .filter((option) => option.text.trim() !== '')
-            .map((option) => ({ text: option.text.trim(), correct: option.correct })),
+            .map((option) => ({ id: option.id, text: option.text.trim(), correct: option.correct })),
           acceptedTextAnswers: [],
         };
       }
 
       return {
+        id: question.id,
         text: question.text.trim(),
         type: question.type,
         points: question.points,
@@ -125,8 +148,8 @@ export default function CreateQuiz() {
 
     try {
       setSaving(true);
-      const savedQuiz = await createQuiz(payload);
-      navigate(`/quiz/${savedQuiz.id}`);
+      const savedQuiz = id ? await updateQuiz(id, payload) : await createQuiz(payload);
+      navigate('/admin/quizzes', { state: { savedQuizId: savedQuiz.id } });
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Unknown save error');
     } finally {
@@ -134,17 +157,39 @@ export default function CreateQuiz() {
     }
   }
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center px-6">
+        <div className="bg-white border border-blue-100 rounded-xl p-6 shadow-sm">
+          <div className="flex gap-2">
+            {[0, 1, 2].map((i) => (
+              <div
+                key={i}
+                className="w-3 h-3 rounded-full bg-blue-200 animate-bounce"
+                style={{ animationDelay: `${i * 0.15}s` }}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-100 text-gray-900">
       <header className="bg-white border-b border-blue-100 px-6 py-5 shadow-sm">
         <div className="max-w-4xl mx-auto flex items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-blue-700">Create quiz</h1>
-            <p className="text-gray-500 text-sm">Admin draft and publish page</p>
+            <h1 className="text-2xl font-bold tracking-tight text-blue-700">
+              {isEditing ? 'Edit quiz' : 'Create quiz'}
+            </h1>
+            <p className="text-gray-500 text-sm">
+              {isEditing ? 'Update quiz content and status' : 'Admin draft and publish page'}
+            </p>
           </div>
 
           <button
-            onClick={() => navigate('/')}
+            onClick={() => navigate('/admin/quizzes')}
             className="px-4 py-2 bg-white text-blue-700 border border-blue-200 rounded-lg hover:bg-blue-50 transition"
           >
             Back
@@ -232,11 +277,41 @@ export default function CreateQuiz() {
             >
               Publish
             </button>
+
+            {isEditing && published && (
+              <button
+                disabled={saving}
+                onClick={() => handleSave(published)}
+                className="px-5 py-2 bg-gray-900 text-white font-semibold rounded-lg hover:bg-gray-800 disabled:opacity-50 transition"
+              >
+                Save
+              </button>
+            )}
           </div>
         </div>
       </main>
     </div>
   );
+}
+
+function toFormQuestion(question: Question): FormQuestion {
+  return {
+    id: question.id,
+    text: question.text ?? '',
+    type: question.type,
+    points: question.points,
+    answerOptions: question.answerOptions?.length
+      ? question.answerOptions.map((option) => ({
+        id: option.id,
+        text: option.text ?? '',
+        correct: Boolean(option.correct),
+      }))
+      : [
+        { text: '', correct: true },
+        { text: '', correct: false },
+      ],
+    acceptedTextAnswers: question.acceptedTextAnswers?.length ? question.acceptedTextAnswers : [''],
+  };
 }
 
 function QuestionEditor({
@@ -374,7 +449,7 @@ function QuestionEditor({
                     })}
                     className="text-sm text-red-600 hover:text-red-700"
                   >
-                    ×
+                    x
                   </button>
                 )}
               </div>
@@ -414,7 +489,7 @@ function QuestionEditor({
                     })}
                     className="text-sm text-red-600 hover:text-red-700"
                   >
-                    ×
+                    x
                   </button>
                 )}
               </div>

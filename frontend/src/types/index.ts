@@ -97,11 +97,13 @@ export interface User {
 }
 
 export interface CreateAnswerOptionPayload {
+  id?: string;
   text: string;
   correct?: boolean;
 }
 
 export interface CreateQuestionPayload {
+  id?: string;
   text: string;
   type: QuestionType;
   answerOptions?: CreateAnswerOptionPayload[];

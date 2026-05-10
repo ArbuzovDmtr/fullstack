@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { fetchCurrentUser, login, logout } from '../api/auth';
-import { deleteQuiz, fetchQuizzes } from '../api/quiz';
+import { fetchQuizzes } from '../api/quiz';
 import type { Quiz, User } from '../types';
 
 export default function QuizList() {
@@ -9,7 +9,6 @@ export default function QuizList() {
   const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [deletingQuizId, setDeletingQuizId] = useState<string | null>(null);
   const navigate = useNavigate();
   const isAdmin = currentUser?.roles?.includes('ADMIN') ?? false;
 
@@ -25,23 +24,6 @@ export default function QuizList() {
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
   }, []);
-
-  async function handleDeleteQuiz(quiz: Quiz) {
-    const confirmed = window.confirm(`Delete quiz "${quiz.title}"?`);
-    if (!confirmed) return;
-
-    setDeletingQuizId(quiz.id);
-    setError(null);
-
-    try {
-      await deleteQuiz(quiz.id);
-      setQuizzes((current) => current.filter((item) => item.id !== quiz.id));
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to delete quiz');
-    } finally {
-      setDeletingQuizId(null);
-    }
-  }
 
   if (loading) {
     return (
@@ -129,12 +111,14 @@ export default function QuizList() {
           </p>
         </section>
         {isAdmin && (
-          <div style={{ marginBottom: '16px' }}>
-            <Link to="/admin/create">
-              <button className="px-5 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition">
-                Create Quiz
-              </button>
-            </Link>
+          <div className="flex flex-wrap gap-3 mb-4">
+            <button
+              type="button"
+              onClick={() => navigate('/admin/quizzes')}
+              className="px-5 py-2 bg-white text-blue-700 border border-blue-200 rounded-lg hover:bg-blue-50 transition"
+            >
+              Admin quizzes
+            </button>
           </div>
         )}
         {quizzes.length === 0 ? (
@@ -186,17 +170,6 @@ export default function QuizList() {
                     >
                       Leaderboard
                     </button>
-
-                    {isAdmin && (
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteQuiz(quiz)}
-                        disabled={deletingQuizId === quiz.id}
-                        className="px-3 py-2 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 disabled:opacity-60 disabled:cursor-not-allowed transition"
-                      >
-                        {deletingQuizId === quiz.id ? 'Deleting...' : 'Delete'}
-                      </button>
-                    )}
 
                     <button
                       type="button"
