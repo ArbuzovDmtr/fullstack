@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -26,9 +27,19 @@ public class AdminQuizController {
         return quizService.getAllQuizzes();
     }
 
+    @GetMapping("/{id}")
+    public Quiz getQuiz(@PathVariable String id) {
+        return quizService.getQuizById(id);
+    }
+
     @PostMapping
     public Quiz createQuiz(@RequestBody Quiz quiz) {
         return quizService.createQuiz(quiz);
+    }
+
+    @PutMapping("/{id}")
+    public Quiz updateQuiz(@PathVariable String id, @RequestBody Quiz quiz) {
+        return quizService.updateQuiz(id, quiz);
     }
 
     @DeleteMapping("/{id}")
