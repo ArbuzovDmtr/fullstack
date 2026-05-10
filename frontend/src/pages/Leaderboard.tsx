@@ -13,39 +13,44 @@ export default function Leaderboard() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!quizId) {
-      setError('Quiz id is missing');
-      setLoading(false);
-      return;
-    }
+    if (!quizId) return;
 
     Promise.all([
       fetchQuiz(quizId),
       fetchLeaderboard(quizId),
     ])
-      .then(([loadedQuiz, loadedEntries]) => {
-        setQuiz(loadedQuiz);
-        setEntries(loadedEntries);
-      })
-      .catch((e) => setError(e instanceof Error ? e.message : 'Can`t load leaderboard'))
-      .finally(() => setLoading(false));
+        .then(([loadedQuiz, loadedEntries]) => {
+          setQuiz(loadedQuiz);
+          setEntries(loadedEntries);
+        })
+        .catch((e) =>
+            setError(e instanceof Error ? e.message : "Can't load leaderboard")
+        )
+        .finally(() => setLoading(false));
   }, [quizId]);
-
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center px-6">
-        <div className="bg-white border border-blue-100 rounded-xl p-6 shadow-sm">
-          <div className="flex gap-2">
-            {[0, 1, 2].map((i) => (
-              <div
-                key={i}
-                className="w-3 h-3 rounded-full bg-blue-200 animate-bounce"
-                style={{ animationDelay: `${i * 0.15}s` }}
-              />
-            ))}
+        <div className="min-h-screen flex items-center justify-center">
+          <p>Loading...</p>
+        </div>
+    );
+  }
+  if (!quizId) {
+    return (
+        <div className="min-h-screen bg-gray-100 flex items-center justify-center px-6">
+          <div className="bg-white border border-blue-100 rounded-xl p-6 shadow-sm text-center max-w-md w-full">
+            <h1 className="text-xl font-semibold text-blue-700 mb-2">
+              Leaderboard unavailable
+            </h1>
+            <p className="text-gray-700 text-sm mb-5">Quiz id is missing</p>
+            <button
+                onClick={() => navigate('/')}
+                className="px-4 py-2 bg-blue-50 text-blue-700 border border-blue-200 rounded-lg hover:bg-blue-100 transition"
+            >
+              All quizzes
+            </button>
           </div>
         </div>
-      </div>
     );
   }
 
