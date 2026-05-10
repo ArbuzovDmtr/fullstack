@@ -21,21 +21,40 @@ public class QuizService {
 
     public Quiz createQuiz(Quiz quiz) {
         quiz.setCreatedAt(Instant.now());
+        assignMissingIds(quiz);
 
+        return quizRepo.save(quiz);
+    }
+
+    public Quiz updateQuiz(String id, Quiz updatedQuiz) {
+        Quiz existingQuiz = getQuizById(id);
+
+        updatedQuiz.setId(id);
+        updatedQuiz.setCreatedAt(existingQuiz.getCreatedAt());
+        if (updatedQuiz.getCreatedByUserId() == null) {
+            updatedQuiz.setCreatedByUserId(existingQuiz.getCreatedByUserId());
+        }
+        assignMissingIds(updatedQuiz);
+
+        return quizRepo.save(updatedQuiz);
+    }
+
+    private void assignMissingIds(Quiz quiz) {
         if (quiz.getQuestions() != null) {
             for (Question question : quiz.getQuestions()) {
-                question.setId(UUID.randomUUID().toString());
+                if (question.getId() == null || question.getId().isBlank()) {
+                    question.setId(UUID.randomUUID().toString());
+                }
 
                 if (question.getAnswerOptions() != null) {
                     for (AnswerOption option : question.getAnswerOptions()) {
-                        option.setId(UUID.randomUUID().toString());
+                        if (option.getId() == null || option.getId().isBlank()) {
+                            option.setId(UUID.randomUUID().toString());
+                        }
                     }
                 }
             }
         }
-
-
-        return quizRepo.save(quiz);
     }
 
     public List<Quiz> getAllPublishedQuizzes() {
