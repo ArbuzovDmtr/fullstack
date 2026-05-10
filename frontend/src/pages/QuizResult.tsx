@@ -86,12 +86,20 @@ export default function QuizResult() {
               <h1 className="text-2xl font-bold text-blue-700 truncate">{result.quizTitle}</h1>
             </div>
 
-            <button
-              onClick={() => navigate('/')}
-              className="px-4 py-2 bg-blue-50 text-blue-700 border border-blue-200 rounded-lg hover:bg-blue-100 transition text-sm"
-            >
-              All quizzes
-            </button>
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => navigate(`/leaderboard/${result.quizId}`)}
+                className="px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition text-sm"
+              >
+                Leaderboard
+              </button>
+              <button
+                onClick={() => navigate('/')}
+                className="px-4 py-2 bg-blue-50 text-blue-700 border border-blue-200 rounded-lg hover:bg-blue-100 transition text-sm"
+              >
+                All quizzes
+              </button>
+            </div>
           </div>
 
           <div className="grid sm:grid-cols-[160px_1fr] gap-6 items-center">
