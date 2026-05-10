@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { fetchCurrentUser } from '../api/auth';
 import { fetchQuiz, submitAttempt } from '../api/quiz';
-import type { Quiz, UserAnswer } from '../types';
+import type { Quiz, User, UserAnswer } from '../types';
 
 const TEMP_USER_ID = 'anonymous';
 
@@ -10,6 +11,7 @@ export default function QuizPlay() {
   const navigate = useNavigate();
 
   const [quiz, setQuiz] = useState<Quiz | null>(null);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -25,14 +27,18 @@ export default function QuizPlay() {
   useEffect(() => {
     if (!id) return;
 
-    fetchQuiz(id)
-      .then((q) => {
+    Promise.all([
+      fetchQuiz(id),
+      fetchCurrentUser().catch(() => null),
+    ])
+      .then(([q, user]) => {
         const sorted = {
           ...q,
           questions: [...q.questions].sort((a, b) => a.orderIndex - b.orderIndex),
         };
 
         setQuiz(sorted);
+        setCurrentUser(user);
 
         if (sorted.timeLimitSeconds) {
           setTimeLeft(sorted.timeLimitSeconds);
@@ -126,7 +132,7 @@ export default function QuizPlay() {
     try {
       const result = await submitAttempt({
         quizId: quiz.id,
-        userId: TEMP_USER_ID,
+        userId: currentUser?.id ?? TEMP_USER_ID,
         answers: finalAnswers,
         startedAt: startedAt.current,
       });
