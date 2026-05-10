@@ -179,6 +179,14 @@ export default function QuizList() {
                   </button>
 
                   <div className="flex items-start gap-3">
+                    <button
+                      type="button"
+                      onClick={() => navigate(`/leaderboard/${quiz.id}`)}
+                      className="px-3 py-2 text-sm text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition"
+                    >
+                      Leaderboard
+                    </button>
+
                     {isAdmin && (
                       <button
                         type="button"
