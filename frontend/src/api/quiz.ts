@@ -37,7 +37,17 @@ export async function fetchLeaderboard(quizId: string): Promise<LeaderboardEntry
   return res.json();
 }
 
+export async function fetchAdminQuizzes(): Promise<Quiz[]> {
+  const res = await fetch(`${BASE}/admin/quizzes`);
+  if (!res.ok) throw new Error('Can`t load admin quizzes');
+  return res.json();
+}
 
+export async function fetchAdminQuiz(id: string): Promise<Quiz> {
+  const res = await fetch(`${BASE}/admin/quizzes/${id}`);
+  if (!res.ok) throw new Error('Quiz not found');
+  return res.json();
+}
 
 export async function createQuiz(payload: CreateQuizPayload): Promise<Quiz> {
   const res = await fetch(`${BASE}/admin/quizzes`, {
@@ -55,6 +65,22 @@ export async function createQuiz(payload: CreateQuizPayload): Promise<Quiz> {
   return res.json();
 }
 
+export async function updateQuiz(id: string, payload: CreateQuizPayload): Promise<Quiz> {
+  const res = await fetch(`${BASE}/admin/quizzes/${id}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    throw new Error('Failed to update quiz');
+  }
+
+  return res.json();
+}
+
 export async function deleteQuiz(id: string): Promise<void> {
   const res = await fetch(`${BASE}/admin/quizzes/${id}`, {
     method: 'DELETE',
@@ -63,4 +89,28 @@ export async function deleteQuiz(id: string): Promise<void> {
   if (!res.ok) {
     throw new Error('Failed to delete quiz');
   }
+}
+
+export async function publishQuiz(id: string): Promise<Quiz> {
+  const res = await fetch(`${BASE}/admin/quizzes/${id}/publish`, {
+    method: 'PATCH',
+  });
+
+  if (!res.ok) {
+    throw new Error(await res.text() || 'Failed to publish quiz');
+  }
+
+  return res.json();
+}
+
+export async function unpublishQuiz(id: string): Promise<Quiz> {
+  const res = await fetch(`${BASE}/admin/quizzes/${id}/unpublish`, {
+    method: 'PATCH',
+  });
+
+  if (!res.ok) {
+    throw new Error('Failed to unpublish quiz');
+  }
+
+  return res.json();
 }
