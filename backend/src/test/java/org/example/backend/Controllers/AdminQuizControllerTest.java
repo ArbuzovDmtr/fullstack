@@ -21,6 +21,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -75,6 +76,42 @@ class AdminQuizControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.title").value("Test quiz"))
                 .andExpect(jsonPath("$.published").value(true));
+    }
+
+    @Test
+    void getQuiz_shouldReturnQuiz() throws Exception {
+        Quiz quiz = new Quiz();
+        quiz.setId("1");
+
+        when(quizService.getQuizById("1")).thenReturn(quiz);
+
+        mockMvc.perform(get("/api/admin/quizzes/1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value("1"));
+    }
+
+    @Test
+    void updateQuiz_shouldReturnUpdatedQuiz() throws Exception {
+        Quiz quiz = new Quiz();
+        quiz.setId("1");
+        quiz.setTitle("Updated quiz");
+        quiz.setPublished(false);
+
+        when(quizService.updateQuiz(any(), any())).thenReturn(quiz);
+
+        mockMvc.perform(put("/api/admin/quizzes/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                    {
+                      "title": "Updated quiz",
+                      "description": "Updated description",
+                      "published": false,
+                      "questions": []
+                    }
+                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.title").value("Updated quiz"))
+                .andExpect(jsonPath("$.published").value(false));
     }
 
     @Test
