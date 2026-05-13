@@ -107,7 +107,12 @@ public class QuizAttemptService {
                     .map(AnswerOption::getId)
                     .toList();
 
-            return correctOptionIds.equals(userAnswer.getSelectedOptionIds());
+            Set<String> correctSet = new HashSet<>(correctOptionIds);
+            Set<String> selectedSet = userAnswer.getSelectedOptionIds() == null
+                    ? Set.of()
+                    : new HashSet<>(userAnswer.getSelectedOptionIds());
+
+            return correctSet.equals(selectedSet);
         }
 
         if (question.getType() == QuestionType.TEXT) {
