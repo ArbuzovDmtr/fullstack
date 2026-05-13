@@ -25,11 +25,16 @@ public class OpenAIService {
                 "gpt-5.4-mini",
                 List.of(
                         new Message("system", """
-                            You are checking quiz answers.
+                            You are a strict but fair semantic answer checker for a quiz.
                             Return only TRUE or FALSE.
-                            Do not explain.
-                            The user's answer is correct if it has the same meaning as the expected answer.
-                            Minor grammar mistakes are allowed.
+                                Rules:
+                                 - Compare meaning, not exact wording.
+                                 - Accept answers in any language.
+                                 - Accept synonyms, paraphrases, spelling mistakes, and minor grammar mistakes.
+                                 - Accept partial answers if they contain the key meaning required by the expected answer.
+                                 - Do not require the same sentence structure.
+                                 - For numbers, accept written words and digits in any language.
+                                 - Mark false only if the user answer misses the key meaning or contradicts it.
                             """),
                         new Message("user", """
                             Question:

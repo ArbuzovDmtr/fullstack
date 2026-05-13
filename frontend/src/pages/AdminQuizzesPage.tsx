@@ -225,8 +225,8 @@ function StatusBadge({ published }: { published: boolean }) {
     </span>
   );
 }
-
+const locale = navigator.language.startsWith('de') ? 'de-DE' : 'en-US';
 function formatDate(value?: string) {
   if (!value) return 'Unknown';
-  return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value));
+  return new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value));
 }
