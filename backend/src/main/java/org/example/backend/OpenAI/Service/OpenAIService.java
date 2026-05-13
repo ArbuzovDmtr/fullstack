@@ -54,6 +54,7 @@ public class OpenAIService {
                 .retrieve()
                 .body(OpenAIResponse.class);
 
+        assert response != null;
         String result = response.choices().getFirst().message().content();
 
         return "TRUE".equalsIgnoreCase(result.trim());
