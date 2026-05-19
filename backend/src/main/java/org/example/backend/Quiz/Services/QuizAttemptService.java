@@ -56,7 +56,9 @@ public class QuizAttemptService {
                 continue;
             }
 
-            if (isAnswerCorrect(question, userAnswer)) {
+            boolean correct = isAnswerCorrect(question, userAnswer);
+            userAnswer.setCorrect(correct);
+            if (correct) {
                 score += question.getPoints();
             }
         }
@@ -75,7 +77,7 @@ public class QuizAttemptService {
         QuizAttempt attempt = quizAttemptRepo.findById(attemptId)
                 .orElseThrow(() -> new NoSuchElementException("Attempt not found"));
 
-        if (!isAdmin && !currentUserId.equals(attempt.getUserId())) {
+        if (!isAdmin && currentUserId != null && !currentUserId.equals(attempt.getUserId())) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
         }
 
@@ -164,12 +166,19 @@ public class QuizAttemptService {
                 ? List.of()
                 : question.getAcceptedTextAnswers();
 
+        boolean correct = false;
+        if (userAnswer != null) {
+            correct = userAnswer.getCorrect() != null
+                    ? userAnswer.getCorrect()
+                    : isAnswerCorrect(question, userAnswer);
+        }
+
         return new AttemptResult.QuestionResult(
                 question.getId(),
                 question.getText(),
                 question.getType(),
                 question.getPoints(),
-                userAnswer != null && isAnswerCorrect(question, userAnswer),
+                correct,
                 correctOptions,
                 userSelectedOptions,
                 acceptedTextAnswers,

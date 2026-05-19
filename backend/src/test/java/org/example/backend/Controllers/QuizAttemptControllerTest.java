@@ -3,6 +3,7 @@ package org.example.backend.Controllers;
 import org.example.backend.Quiz.AttemptResult;
 import org.example.backend.Quiz.QuizAttempt;
 import org.example.backend.Quiz.Services.QuizAttemptService;
+import org.example.backend.User.UserService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
@@ -14,8 +15,10 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
+import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -34,6 +37,9 @@ class QuizAttemptControllerTest {
 
     @MockitoBean
     private QuizAttemptService quizAttemptService;
+
+    @MockitoBean
+    private UserService userService;
 
     @Test
     void submitAttempt_shouldReturnResult() throws Exception {
@@ -71,7 +77,8 @@ class QuizAttemptControllerTest {
                 List.of()
         );
 
-        when(quizAttemptService.getAttemptResult("attempt-1"))
+        when(userService.findCurrentUser()).thenReturn(Optional.empty());
+        when(quizAttemptService.getAttemptResult(eq("attempt-1"), eq(null), eq(false)))
                 .thenReturn(result);
 
         mockMvc.perform(get("/api/attempts/attempt-1/result"))

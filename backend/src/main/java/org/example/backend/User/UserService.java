@@ -8,7 +8,7 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-
+import java.util.Optional;
 import java.util.Set;
 
 @Service
@@ -51,6 +51,7 @@ public class UserService {
     public User getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
+        assert authentication != null;
         if (!(authentication.getPrincipal() instanceof OAuth2User oauth2User)) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User is not authenticated");
         }
@@ -59,6 +60,20 @@ public class UserService {
         String providerId = oauth2User.getAttribute("id").toString();
 
         return findUser(provider, providerId);
+    }
+
+    public Optional<User> findCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        assert authentication != null;
+        if (!(authentication.getPrincipal() instanceof OAuth2User oauth2User)) {
+            return Optional.empty();
+        }
+
+        String provider = "github";
+        String providerId = oauth2User.getAttribute("id").toString();
+
+        return userRepo.findByProviderAndProviderId(provider, providerId);
     }
 
     public User findOrCreateOAuthUser(String provider, OAuth2User oauth2User) {

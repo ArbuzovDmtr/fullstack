@@ -4,7 +4,15 @@ import { fetchCurrentUser } from '../api/auth';
 import { fetchQuiz, submitAttempt } from '../api/quiz';
 import type { Quiz, User, UserAnswer } from '../types';
 
-const TEMP_USER_ID = 'anonymous';
+function getGuestUserId(): string {
+  const key = 'guestUserId';
+  let id = localStorage.getItem(key);
+  if (!id) {
+    id = crypto.randomUUID();
+    localStorage.setItem(key, id);
+  }
+  return id;
+}
 
 export default function QuizPlay() {
   const { id } = useParams<{ id: string }>();
@@ -132,7 +140,7 @@ export default function QuizPlay() {
     try {
       const result = await submitAttempt({
         quizId: quiz.id,
-        userId: currentUser?.id ?? TEMP_USER_ID,
+        userId: currentUser?.id ?? getGuestUserId(),
         answers: finalAnswers,
         startedAt: startedAt.current,
       });

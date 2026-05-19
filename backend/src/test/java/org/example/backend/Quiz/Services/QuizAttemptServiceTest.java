@@ -462,7 +462,7 @@ class QuizAttemptServiceTest {
         when(quizAttemptRepo.findById("attempt-1")).thenReturn(Optional.of(attempt));
         when(quizRepo.findById("quiz-1")).thenReturn(Optional.of(quiz));
 
-        AttemptResult result = quizAttemptService.getAttemptResult("attempt-1");
+        AttemptResult result = quizAttemptService.getAttemptResult("attempt-1", null, false);
 
         assertThat(result.attemptId()).isEqualTo("attempt-1");
         assertThat(result.quizTitle()).isEqualTo("Quiz title");

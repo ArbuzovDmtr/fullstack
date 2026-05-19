@@ -6,7 +6,6 @@ import org.example.backend.Quiz.AttemptResult;
 import org.example.backend.Quiz.QuizAttempt;
 import org.example.backend.Quiz.Services.QuizAttemptService;
 import org.example.backend.User.Role;
-import org.example.backend.User.User;
 import org.example.backend.User.UserService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -24,15 +23,20 @@ public class QuizAttemptController {
 
     @PostMapping("/attempts")
     public QuizAttempt submitAttempt(@RequestBody QuizAttempt attempt) {
-        attempt.setUserId(userService.getCurrentUser().getId());
+        userService.findCurrentUser()
+                .ifPresent(user -> attempt.setUserId(user.getId()));
         return quizAttemptService.submitAttempt(attempt);
     }
 
     @GetMapping("/attempts/{attemptId}/result")
     public AttemptResult getAttemptResult(@PathVariable String attemptId) {
-        User currentUser = userService.getCurrentUser();
-        boolean isAdmin = currentUser.getRoles().contains(Role.ADMIN);
-        return quizAttemptService.getAttemptResult(attemptId, currentUser.getId(), isAdmin);
+        return userService.findCurrentUser()
+                .map(user -> quizAttemptService.getAttemptResult(
+                        attemptId,
+                        user.getId(),
+                        user.getRoles().contains(Role.ADMIN)
+                ))
+                .orElseGet(() -> quizAttemptService.getAttemptResult(attemptId, null, false));
     }
 
 }

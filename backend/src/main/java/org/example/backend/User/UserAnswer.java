@@ -18,4 +18,6 @@ public class UserAnswer {
     private String textAnswer;
 
     private Integer timeSpentSeconds;
+
+    private Boolean correct;
 }

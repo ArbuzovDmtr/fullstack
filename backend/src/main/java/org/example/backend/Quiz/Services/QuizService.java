@@ -80,6 +80,9 @@ public class QuizService {
     }
 
     public void deleteQuiz(String id) {
+        if (!quizRepo.existsById(id)) {
+            throw new NoSuchElementException("Quiz not found");
+        }
         quizRepo.deleteById(id);
     }
 
