@@ -5,6 +5,8 @@ import lombok.RequiredArgsConstructor;
 import org.example.backend.Quiz.AttemptResult;
 import org.example.backend.Quiz.QuizAttempt;
 import org.example.backend.Quiz.Services.QuizAttemptService;
+import org.example.backend.User.Role;
+import org.example.backend.User.User;
 import org.example.backend.User.UserService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -28,7 +30,9 @@ public class QuizAttemptController {
 
     @GetMapping("/attempts/{attemptId}/result")
     public AttemptResult getAttemptResult(@PathVariable String attemptId) {
-        return quizAttemptService.getAttemptResult(attemptId);
+        User currentUser = userService.getCurrentUser();
+        boolean isAdmin = currentUser.getRoles().contains(Role.ADMIN);
+        return quizAttemptService.getAttemptResult(attemptId, currentUser.getId(), isAdmin);
     }
 
 }

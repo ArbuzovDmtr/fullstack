@@ -12,7 +12,9 @@ import org.example.backend.Quiz.QuizAttempt;
 import org.example.backend.Quiz.Repositories.QuizAttemptRepo;
 import org.example.backend.Quiz.Repositories.QuizRepo;
 import org.example.backend.User.UserAnswer;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -69,9 +71,13 @@ public class QuizAttemptService {
         return savedAttempt;
     }
 
-    public AttemptResult getAttemptResult(String attemptId) {
+    public AttemptResult getAttemptResult(String attemptId, String currentUserId, boolean isAdmin) {
         QuizAttempt attempt = quizAttemptRepo.findById(attemptId)
                 .orElseThrow(() -> new NoSuchElementException("Attempt not found"));
+
+        if (!isAdmin && !currentUserId.equals(attempt.getUserId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
+        }
 
         Quiz quiz = quizRepo.findById(attempt.getQuizId())
                 .orElseThrow(() -> new NoSuchElementException("Quiz not found"));
