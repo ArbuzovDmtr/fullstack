@@ -54,7 +54,7 @@ public class OpenAIService {
                 .retrieve()
                 .body(OpenAIResponse.class);
 
-        assert response != null;
+        if (response == null) throw new IllegalStateException("OpenAI response is null");
         String result = response.choices().getFirst().message().content();
 
         return "TRUE".equalsIgnoreCase(result.trim());
