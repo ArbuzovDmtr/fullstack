@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { fetchCurrentUser } from '../api/auth';
 import { fetchQuiz, submitAttempt } from '../api/quiz';
@@ -28,9 +28,10 @@ export default function QuizPlay() {
   const [answers, setAnswers] = useState<UserAnswer[]>([]);
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
 
-  const startedAt = useRef(new Date().toISOString());
-  const questionStartedAt = useRef(Date.now());
+  const startedAt = useRef<string | null>(null);
+  const questionStartedAt = useRef<number | null>(null);
   const answersRef = useRef<UserAnswer[]>([]);
+  const submitRef = useRef<(() => Promise<void>) | null>(null);
 
   useEffect(() => {
     if (!id) return;
@@ -47,6 +48,8 @@ export default function QuizPlay() {
 
         setQuiz(sorted);
         setCurrentUser(user);
+        startedAt.current = new Date().toISOString();
+        questionStartedAt.current = Date.now();
 
         if (sorted.timeLimitSeconds) {
           setTimeLeft(sorted.timeLimitSeconds);
@@ -63,6 +66,9 @@ export default function QuizPlay() {
       setTimeLeft((currentTimeLeft) => {
         if (currentTimeLeft === null || currentTimeLeft <= 1) {
           clearInterval(interval);
+          window.setTimeout(() => {
+            void submitRef.current?.();
+          }, 0);
           return 0;
         }
 
@@ -71,12 +77,6 @@ export default function QuizPlay() {
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [timeLeft]);
-
-  useEffect(() => {
-    if (timeLeft === 0) {
-      void handleSubmit();
-    }
   }, [timeLeft]);
 
   useEffect(() => {
@@ -103,10 +103,12 @@ export default function QuizPlay() {
     });
   }
 
-  function withCurrentQuestionTime(sourceAnswers: UserAnswer[]) {
+  const withCurrentQuestionTime = useCallback((sourceAnswers: UserAnswer[]) => {
     if (!currentQuestion) return sourceAnswers;
 
-    const elapsedSeconds = Math.max(0, Math.round((Date.now() - questionStartedAt.current) / 1000));
+    const now = Date.now();
+    const questionStart = questionStartedAt.current ?? now;
+    const elapsedSeconds = Math.max(0, Math.round((now - questionStart) / 1000));
     const existingAnswer = sourceAnswers.find((answer) => answer.questionId === currentQuestion.id);
     const updatedAnswer: UserAnswer = {
       ...existingAnswer,
@@ -114,13 +116,13 @@ export default function QuizPlay() {
       timeSpentSeconds: (existingAnswer?.timeSpentSeconds ?? 0) + elapsedSeconds,
     };
 
-    questionStartedAt.current = Date.now();
+    questionStartedAt.current = now;
 
     return [
       ...sourceAnswers.filter((answer) => answer.questionId !== currentQuestion.id),
       updatedAnswer,
     ];
-  }
+  }, [currentQuestion]);
 
   function goToQuestion(nextIndex: number) {
     const updatedAnswers = withCurrentQuestionTime(answersRef.current);
@@ -129,7 +131,7 @@ export default function QuizPlay() {
     setCurrentIndex(nextIndex);
   }
 
-  async function handleSubmit() {
+  const handleSubmit = useCallback(async () => {
     if (!quiz || submitting) return;
 
     setSubmitting(true);
@@ -142,7 +144,7 @@ export default function QuizPlay() {
         quizId: quiz.id,
         userId: currentUser?.id ?? getGuestUserId(),
         answers: finalAnswers,
-        startedAt: startedAt.current,
+        startedAt: startedAt.current ?? new Date().toISOString(),
       });
 
       navigate(`/result/${result.id}`, { state: { attempt: result, quizTitle: quiz.title } });
@@ -150,7 +152,11 @@ export default function QuizPlay() {
       setError(e instanceof Error ? e.message : 'Error');
       setSubmitting(false);
     }
-  }
+  }, [currentUser, navigate, quiz, submitting, withCurrentQuestionTime]);
+
+  useEffect(() => {
+    submitRef.current = handleSubmit;
+  }, [handleSubmit]);
 
   function formatTime(seconds: number) {
     return `${Math.floor(seconds / 60)}:${(seconds % 60).toString().padStart(2, '0')}`;
@@ -184,7 +190,7 @@ export default function QuizPlay() {
             onClick={() => navigate('/')}
             className="px-4 py-2 bg-blue-50 text-blue-700 border border-blue-200 rounded-lg hover:bg-blue-100 transition"
           >
-            ← Назад
+            Back
           </button>
         </div>
       </div>
